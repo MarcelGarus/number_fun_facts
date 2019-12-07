@@ -1,15 +1,14 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:number_fun_fact/utils.dart';
 
 import 'favorite_button.dart';
+import 'utils.dart';
 
 class NumberDetailsScreen extends StatefulWidget {
   final int number;
 
-  const NumberDetailsScreen({Key key, this.number}) : super(key: key);
+  const NumberDetailsScreen({Key key, @required this.number})
+      : assert(number != null),
+        super(key: key);
 
   @override
   _NumberDetailsScreenState createState() => _NumberDetailsScreenState();
@@ -26,9 +25,8 @@ class _NumberDetailsScreenState extends State<NumberDetailsScreen> {
   }
 
   Future<void> _refresh() async {
-    if (isLoading) {
-      return;
-    }
+    if (isLoading) return;
+
     setState(() => fact = null);
     var theFact = await fetchFact(widget.number);
     setState(() => fact = theFact);
@@ -41,10 +39,7 @@ class _NumberDetailsScreenState extends State<NumberDetailsScreen> {
         title: Text('Details for'),
         elevation: 0,
         actions: <Widget>[
-          FavoriteButton(
-            number: widget.number,
-            color: Colors.white,
-          )
+          FavoriteButton(number: widget.number, color: Colors.white)
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -68,18 +63,19 @@ class _NumberDetailsScreenState extends State<NumberDetailsScreen> {
           Spacer(),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 32),
-            child: _buildFact(),
+            child: isLoading
+                ? CircularProgressIndicator()
+                : Text(
+                    fact,
+                    style: Theme.of(context)
+                        .textTheme
+                        .body1
+                        .copyWith(fontSize: 24),
+                  ),
           ),
           Spacer(),
         ],
       ),
     );
-  }
-
-  Widget _buildFact() {
-    if (isLoading) {
-      return CircularProgressIndicator();
-    }
-    return Text(fact);
   }
 }

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:number_fun_fact/details.dart';
-import 'package:number_fun_fact/favorite_button.dart';
-import 'package:number_fun_fact/utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import 'details.dart';
+import 'favorite_button.dart';
+import 'utils.dart';
+
+/// This is the entry point into our application.
 void main() async {
   Hive.init((await getApplicationDocumentsDirectory()).path);
-  await Hive.openBox('favorites');
+  await Hive.openBox<bool>('favorites');
   runApp(MyApp());
 }
 
@@ -37,49 +39,43 @@ class NumberListScreen extends StatefulWidget {
 }
 
 class _NumberListScreenState extends State<NumberListScreen> {
-  bool filtered = false;
+  bool _isFiltered = false;
 
-  void toggleFilter() {
-    setState(() {
-      filtered = !filtered;
-    });
-  }
+  void _toggleFilter() => setState(() => _isFiltered = !_isFiltered);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Number Fun Facts')),
-      body: buildList(),
+      body: _buildList(),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: toggleFilter,
+        onPressed: _toggleFilter,
         icon: Icon(Icons.filter_list),
-        label: Text('Filter'),
+        label: Text(_isFiltered ? 'Show all' : 'Filter'),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
-  Widget buildList() {
-    if (!filtered) {
+  Widget _buildList() {
+    if (!_isFiltered) {
       return ListView.builder(
         itemBuilder: (context, index) => NumberTile(number: index),
       );
     } else {
       return StreamBuilder<Set<int>>(
-          stream: Provider.of<FavoriteBloc>(context).allFavorites,
-          initialData: {},
-          builder: (context, snapshot) {
-            var numbers = snapshot.data.toList()..sort();
+        stream: Provider.of<FavoriteBloc>(context).allFavorites,
+        initialData: {},
+        builder: (context, snapshot) {
+          var numbers = snapshot.data.toList()..sort();
 
-            return ListView(
-              children: <Widget>[
-                for (var number in numbers)
-                  NumberTile(
-                    number: number,
-                  ),
-              ],
-            );
-          });
+          return ListView(
+            children: <Widget>[
+              for (var number in numbers) NumberTile(number: number),
+            ],
+          );
+        },
+      );
     }
   }
 }
@@ -87,7 +83,9 @@ class _NumberListScreenState extends State<NumberListScreen> {
 class NumberTile extends StatelessWidget {
   final int number;
 
-  const NumberTile({Key key, this.number}) : super(key: key);
+  const NumberTile({Key key, @required this.number})
+      : assert(number != null),
+        super(key: key);
 
   void _openDetailsScreen(BuildContext context) {
     Navigator.of(context).push(MaterialPageRoute(
@@ -98,12 +96,13 @@ class NumberTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-        title: Text('Hallo $number'),
-        subtitle: Text('hey'),
-        onTap: () => _openDetailsScreen(context),
-        trailing: FavoriteButton(
-          number: number,
-          color: Theme.of(context).primaryColor,
-        ));
+      title: Text('Hallo $number'),
+      subtitle: Text('hey'),
+      onTap: () => _openDetailsScreen(context),
+      trailing: FavoriteButton(
+        number: number,
+        color: Theme.of(context).primaryColor,
+      ),
+    );
   }
 }

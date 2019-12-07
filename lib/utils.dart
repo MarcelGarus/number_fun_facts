@@ -14,22 +14,21 @@ Future<String> fetchFact(int number) async {
 }
 
 class FavoriteBloc {
-  Box _favorites = Hive.box('favorites');
-
-  FavoriteBloc() {
-    print(_favorites.keys);
-  }
+  final _favorites = Hive.box<bool>('favorites');
 
   Stream<Set<int>> get allFavorites async* {
     favorites() => _favorites.keys.toSet().cast<int>();
+
     yield favorites();
-    await for (var _ in _favorites.watch()) yield favorites();
+    await for (var _ in _favorites.watch()) {
+      yield favorites();
+    }
   }
 
   bool _isFavorite(int number) => _favorites.get(number) != null;
   Stream<bool> isFavorite(int number) async* {
     yield _isFavorite(number);
-    await for (var event in _favorites.watch(key: number)) yield !event.deleted;
+    yield* _favorites.watch(key: number).map((event) => !event.deleted);
   }
 
   void toggleFavorite(int number) {
@@ -38,6 +37,5 @@ class FavoriteBloc {
     } else {
       _favorites.put(number, true);
     }
-    print(_favorites.keys);
   }
 }
