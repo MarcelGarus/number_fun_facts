@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:number_fun_fact/utils.dart';
+
+import 'favorite_button.dart';
 
 class NumberDetailsScreen extends StatefulWidget {
   final int number;
@@ -14,6 +17,7 @@ class NumberDetailsScreen extends StatefulWidget {
 
 class _NumberDetailsScreenState extends State<NumberDetailsScreen> {
   String fact = '';
+  bool get isLoading => fact == null;
 
   @override
   void initState() {
@@ -22,20 +26,12 @@ class _NumberDetailsScreenState extends State<NumberDetailsScreen> {
   }
 
   Future<void> _refresh() async {
-    if (fact == null) {
+    if (isLoading) {
       return;
     }
     setState(() => fact = null);
-    try {
-      //var response = await http.get('http://numbersapi.com/${widget.number}');
-      //setState(() => fact = response.body);
-
-      // Don't use this below, but rather that above.
-      await Future.delayed(Duration(seconds: 1));
-      throw SocketException('No internet.');
-    } on SocketException {
-      setState(() => fact = 'You have no internet.');
-    }
+    var theFact = await fetchFact(widget.number);
+    setState(() => fact = theFact);
   }
 
   @override
@@ -44,6 +40,12 @@ class _NumberDetailsScreenState extends State<NumberDetailsScreen> {
       appBar: AppBar(
         title: Text('Details for'),
         elevation: 0,
+        actions: <Widget>[
+          FavoriteButton(
+            number: widget.number,
+            color: Colors.white,
+          )
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.refresh),
@@ -66,15 +68,18 @@ class _NumberDetailsScreenState extends State<NumberDetailsScreen> {
           Spacer(),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 32),
-            child: (fact == null)
-                ? CircularProgressIndicator()
-                : Text(
-                    fact,
-                  ),
+            child: _buildFact(),
           ),
           Spacer(),
         ],
       ),
     );
+  }
+
+  Widget _buildFact() {
+    if (isLoading) {
+      return CircularProgressIndicator();
+    }
+    return Text(fact);
   }
 }
